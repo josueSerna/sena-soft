@@ -1,5 +1,3 @@
-import React from "react";
-import MapComponent from "./components/MapComponent";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import MainLayout from "./layout/MainLayout";
 import LoginPage from "./pages/LoginPage";
@@ -15,7 +13,6 @@ function App() {
           <Route path="/login" element={<LoginPage/>}/>
 
           <Route path="/map" element={<MainLayout/>}>
-
           </Route>
         </Routes>
       </Router>

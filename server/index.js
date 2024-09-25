@@ -4,7 +4,6 @@ const cors = require('cors');
 const app = express();
 const port = 3001;
 
-
 app.use(cors());
 app.use(express.json()); 
 const connection = mysql.createConnection({
@@ -14,7 +13,6 @@ const connection = mysql.createConnection({
   database: 'sena_bikes_db',
 });
 
-
 connection.connect((err) => {
   if (err) {
     console.error('Error al conectar la base de datos', err);
@@ -23,7 +21,7 @@ connection.connect((err) => {
   console.log('Conexión exitosa a la base de datos');
 });
 
-
+// Obtener todas las localizaciones
 app.get('/locations', (req, res) => {
   const query = 'SELECT * FROM locations';
   connection.query(query, (err, results) => {
@@ -34,60 +32,45 @@ app.get('/locations', (req, res) => {
   });
 });
 
-
-app.post('/create', (req, res) => {
-  const { name, email, password } = req.body; 
-
-  // Validación de campos vacíos
-  if (!name || !email || !password) {
-      return res.status(400).send('Todos los campos son requeridos');
-  }
-  
-  // Verificar si el nombre o el correo ya existen
-  const checkUserQuery = 'SELECT * FROM users WHERE name = ? OR email = ?';
-  const checkValues = [name, email];
-
-  connection.query(checkUserQuery, checkValues, (err, results) => {
-      if (err) {
-          return res.status(500).send('Error en la base de datos');
-      }
-
-      // Si se encuentra algún resultado, el usuario ya existe
-      if (results.length > 0) {
-          return res.status(409).send('Usuario existente'); // 409 Conflict
-      }
-
-      // Si el usuario no existe, proceder a insertarlo
-      const insertUser = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-      const values = [name, email, password];
-
-      connection.query(insertUser, values, (err, results) => {
-          if (err) {
-              return res.status(500).send('Error al crear el usuario');
-          }
-          res.send('Usuario registrado exitosamente');
-      });
+// Obtener una ubicación específica por ID
+app.get('/locations/:id', (req, res) => {
+  const locationId = req.params.id;
+  const query = 'SELECT * FROM locations WHERE id = ?';
+  connection.query(query, [locationId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(404).send("Ubicación no encontrada");
+    }
+    res.json(results[0]); // Enviar el primer resultado como la ubicación
   });
 });
 
+// Alquilar una bicicleta
+app.post('/rent/:locationId', (req, res) => {
+  const locationId = req.params.locationId;
 
+  // Obtener la cantidad de bicicletas disponibles en la ubicación seleccionada
+  const selectQuery = 'SELECT bikes FROM locations WHERE id = ?';
+  connection.query(selectQuery, [locationId], (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(500).send('Error al obtener la disponibilidad de bicicletas');
+    }
 
-app.post('/login', (req, res) => {
-  const { email, password } = req.body
+    const availableBikes = results[0].bikes;
 
-  const query = 'SELECT * FROM users WHERE email = ? AND password = ?'
-  connection.query(query, [email, password], (err, results) => {
-      if (err) {
-          return res.status(500).send('Error al verificar las credenciales');
-      }
-
-      if (results.length > 0) {
-          res.send('Inicio de sesión exitoso');
-      } else {
-          res.status(401).send('Email o contraseña incorrectos');
-      }
+    if (availableBikes > 0) {
+      // Si hay bicicletas disponibles, actualizamos la cantidad
+      const updateQuery = 'UPDATE locations SET bikes = bikes - 1 WHERE id = ?';
+      connection.query(updateQuery, [locationId], (err) => {
+        if (err) {
+          return res.status(500).send('Error al alquilar la bicicleta');
+        }
+        res.send('Bicicleta alquilada con éxito');
+      });
+    } else {
+      res.status(400).send('No hay bicicletas disponibles en esta ubicación');
+    }
   });
-})
+});
 
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
