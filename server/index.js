@@ -37,21 +37,40 @@ app.get('/locations', (req, res) => {
 
 app.post('/create', (req, res) => {
   const { name, email, password } = req.body; 
+
+  // Validación de campos vacíos
   if (!name || !email || !password) {
-    return res.status(400).send('Todos los campos son requeridos');
+      return res.status(400).send('Todos los campos son requeridos');
   }
+  
+  // Verificar si el nombre o el correo ya existen
+  const checkUserQuery = 'SELECT * FROM users WHERE name = ? OR email = ?';
+  const checkValues = [name, email];
 
-  const insertUser = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-  const values = [name, email, password];
+  connection.query(checkUserQuery, checkValues, (err, results) => {
+      if (err) {
+          return res.status(500).send('Error en la base de datos');
+      }
 
-  connection.query(insertUser, values, (err, results) => {
-    if (err) {
-      return res.status(500).send('Error al crear el usuario');
-    } else {
-      res.send('Usuario registrado exitosamente');
-    }
+      // Si se encuentra algún resultado, el usuario ya existe
+      if (results.length > 0) {
+          return res.status(409).send('Usuario existente'); // 409 Conflict
+      }
+
+      // Si el usuario no existe, proceder a insertarlo
+      const insertUser = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+      const values = [name, email, password];
+
+      connection.query(insertUser, values, (err, results) => {
+          if (err) {
+              return res.status(500).send('Error al crear el usuario');
+          }
+          res.send('Usuario registrado exitosamente');
+      });
   });
 });
+
+
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body
@@ -62,7 +81,6 @@ app.post('/login', (req, res) => {
           return res.status(500).send('Error al verificar las credenciales');
       }
 
-      // Verifica si se encontró algún resultado
       if (results.length > 0) {
           res.send('Inicio de sesión exitoso');
       } else {

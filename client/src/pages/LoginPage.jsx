@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';  // Para redirigir después del login exitoso
+import { useNavigate, Link } from 'react-router-dom'; 
+import senaLogo from '../assets/sena-logo.svg'; 
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -16,40 +17,46 @@ const LoginPage = () => {
                 email,
                 password
             });
-            
-            // Si el inicio de sesión es exitoso
+
             setMessage(response.data);
-            
-            // Redirigir al usuario después del inicio de sesión
+
             setTimeout(() => {
-                navigate('/map');  // Cambia a la ruta que quieras después de iniciar sesión
-            }, 2000);  // Espera 2 segundos antes de redirigir
+                navigate('/map');
+            }, 1000);
         } catch (error) {
             setMessage(error.response?.data || 'Error al iniciar sesión');
         }
     };
 
     return (
-        <div>
-            <h2>Inicio de Sesión</h2>
-            <form onSubmit={onLoginSubmit}>
-                <input
-                    type="email"
-                    placeholder="Correo electrónico"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <button type="submit">Iniciar Sesión</button>
-            </form>
-            {message && <p>{message}</p>}
+        <div className="page-container">
+            <div className="form-container">
+                <h2 className="text-center">Inicio de Sesión</h2>
+                <form onSubmit={onLoginSubmit}>
+                    <input
+                        type="email"
+                        placeholder="Correo electrónico"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <button type="submit" className="submit-button">Iniciar Sesión</button>
+                </form>
+                {message && <div className="alert alert-info mt-3">{message}</div>}
+                <div className="text-center mt-3">
+                    <p>No tienes cuenta? <Link to="/" className="highlight-link">Regístrate</Link></p>
+                </div>
+                <div className="text-center mt-3">
+                    <img src={senaLogo} alt="Logo SENA" className="sena-logo" />
+                </div>
+            </div>
         </div>
     );
 };
