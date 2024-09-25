@@ -6,6 +6,7 @@ const port = 3001;
 
 app.use(cors());
 app.use(express.json()); 
+
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -21,7 +22,7 @@ connection.connect((err) => {
   console.log('Conexión exitosa a la base de datos');
 });
 
-// Obtener todas las localizaciones
+// Ruta para obtener todas las localizaciones
 app.get('/locations', (req, res) => {
   const query = 'SELECT * FROM locations';
   connection.query(query, (err, results) => {
@@ -32,43 +33,20 @@ app.get('/locations', (req, res) => {
   });
 });
 
-// Obtener una ubicación específica por ID
+// Ruta para obtener una localización por ID
 app.get('/locations/:id', (req, res) => {
-  const locationId = req.params.id;
-  const query = 'SELECT * FROM locations WHERE id = ?';
-  connection.query(query, [locationId], (err, results) => {
-    if (err || results.length === 0) {
-      return res.status(404).send("Ubicación no encontrada");
+  const { id } = req.params; // Obtiene el ID de la URL
+  const query = 'SELECT * FROM locations WHERE id = ?'; // Consulta parametrizada
+
+  connection.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error al obtener la localización:', err);
+      return res.status(500).send('Error al obtener la localización');
     }
-    res.json(results[0]); // Enviar el primer resultado como la ubicación
-  });
-});
-
-// Alquilar una bicicleta
-app.post('/rent/:locationId', (req, res) => {
-  const locationId = req.params.locationId;
-
-  // Obtener la cantidad de bicicletas disponibles en la ubicación seleccionada
-  const selectQuery = 'SELECT bikes FROM locations WHERE id = ?';
-  connection.query(selectQuery, [locationId], (err, results) => {
-    if (err || results.length === 0) {
-      return res.status(500).send('Error al obtener la disponibilidad de bicicletas');
+    if (results.length === 0) {
+      return res.status(404).send('Localización no encontrada'); // Manejo del caso en que no se encuentra la localización
     }
-
-    const availableBikes = results[0].bikes;
-
-    if (availableBikes > 0) {
-      // Si hay bicicletas disponibles, actualizamos la cantidad
-      const updateQuery = 'UPDATE locations SET bikes = bikes - 1 WHERE id = ?';
-      connection.query(updateQuery, [locationId], (err) => {
-        if (err) {
-          return res.status(500).send('Error al alquilar la bicicleta');
-        }
-        res.send('Bicicleta alquilada con éxito');
-      });
-    } else {
-      res.status(400).send('No hay bicicletas disponibles en esta ubicación');
-    }
+    res.json(results[0]); // Enviamos la localización encontrada
   });
 });
 
