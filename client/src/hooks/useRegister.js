@@ -23,17 +23,26 @@ const useRegister = () => {
 
     try {
       const response = await axios.post('http://localhost:3001/create', newUser);
-      setMessage(response.data);
-      
+
+      // Si la respuesta es un objeto con un mensaje
+      if (response.data && typeof response.data === 'object' && response.data.message) {
+        setMessage(response.data.message); // Establece el mensaje desde el objeto
+      } else {
+        setMessage(response.data); // Si es solo un string, mostrarlo directamente
+      }
+
       if (response.data === 'Usuario registrado exitosamente') {
         setTimeout(() => {
           navigate('/login');
         }, 1000);
       }
-
     } catch (error) {
       // Mostrar el mensaje de error recibido del servidor
-      setMessage(error.response?.data || 'Error al registrar el usuario');
+      if (error.response && error.response.data && error.response.data.message) {
+        setMessage(error.response.data.message); // Capturar mensaje del error
+      } else {
+        setMessage('Error al registrar el usuario'); // Mensaje por defecto si no se recibe uno claro
+      }
     }
   };
 
