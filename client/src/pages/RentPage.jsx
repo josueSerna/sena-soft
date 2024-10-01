@@ -1,25 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Importa useNavigate para la navegación
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import 'bootstrap/dist/css/bootstrap.min.css'; // Asegúrate de tener Bootstrap instalado
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const RentPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate(); // Inicializa useNavigate
+  const navigate = useNavigate();
   const [location, setLocation] = useState(null);
   const [bikesRented, setBikesRented] = useState(1);
-  const [showReturnButton, setShowReturnButton] = useState(false); // Nuevo estado
+  const [showReturnButton, setShowReturnButton] = useState(false);
 
-  const userId = localStorage.getItem('userId') || 1; // Reemplaza esto con el valor real o mantén el valor de prueba
+  const userId = localStorage.getItem('userId') || 1;
 
   useEffect(() => {
-    // Recupera el estado de alquiler desde localStorage al cargar el componente
     const rentedBikes = JSON.parse(localStorage.getItem('rentedBikes')) || {};
     if (rentedBikes[userId]) {
       setShowReturnButton(true);
     }
 
-    // Recuperar localización
     axios.get(`http://localhost:3001/locations/${id}`)
       .then((response) => {
         setLocation(response.data);
@@ -31,7 +29,7 @@ const RentPage = () => {
 
   const handleRent = () => {
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + 86400000); // Alquilar por 1 día
+    const endDate = new Date(startDate.getTime() + 86400000);
     const rentalData = {
       user_id: userId,
       location_id: location.id,
@@ -42,18 +40,16 @@ const RentPage = () => {
 
     axios.post('http://localhost:3001/rent', rentalData)
       .then(response => {
-        // Actualiza la cantidad de bicicletas disponibles
         setLocation(prevLocation => ({
           ...prevLocation,
-          bikes: prevLocation.bikes - bikesRented, // Resta las bicicletas alquiladas
+          bikes: prevLocation.bikes - bikesRented,
         }));
 
-        // Guarda en localStorage que el usuario tiene bicicletas alquiladas
         const rentedBikes = JSON.parse(localStorage.getItem('rentedBikes')) || {};
-        rentedBikes[userId] = { bikesRented, locationId: location.id }; // Almacena bajo el ID del usuario
+        rentedBikes[userId] = { bikesRented, locationId: location.id };
         localStorage.setItem('rentedBikes', JSON.stringify(rentedBikes));
 
-        setShowReturnButton(true); // Mostrar el botón después de alquilar
+        setShowReturnButton(true);
       })
       .catch(error => {
         if (error.response) {
@@ -70,26 +66,23 @@ const RentPage = () => {
     const returnData = {
       user_id: userId,
       location_id: location.id,
-      bikes_returned: bikesRented, // Número de bicicletas devueltas
+      bikes_returned: bikesRented,
     };
 
     axios.post('http://localhost:3001/return', returnData)
       .then(response => {
         alert('Bicicleta devuelta exitosamente');
-
-        // Actualiza la cantidad de bicicletas disponibles
         setLocation(prevLocation => ({
           ...prevLocation,
-          bikes: prevLocation.bikes + bikesRented, // Suma las bicicletas devueltas
+          bikes: prevLocation.bikes + bikesRented,
         }));
 
-        // Elimina el estado de alquiler de localStorage
         const rentedBikes = JSON.parse(localStorage.getItem('rentedBikes')) || {};
-        delete rentedBikes[userId]; // Elimina el alquiler del usuario
+        delete rentedBikes[userId];
         localStorage.setItem('rentedBikes', JSON.stringify(rentedBikes));
 
-        setShowReturnButton(false); // Ocultar botón después de devolver la bicicleta
-        setBikesRented(1); // Restablecer el número de bicicletas alquiladas
+        setShowReturnButton(false);
+        setBikesRented(1);
       })
       .catch(error => {
         console.error('Error al devolver la bicicleta:', error);
@@ -112,24 +105,22 @@ const RentPage = () => {
           min="1"
           max={location.bikes}
           className="form-control mb-3"
-          disabled={showReturnButton} // Desactiva el input si el usuario tiene una bicicleta alquilada
+          disabled={showReturnButton}
         />
         <button
           className="btn btn-success"
           onClick={handleRent}
-          disabled={showReturnButton} // Desactiva el botón de alquiler si el usuario tiene una bicicleta alquilada
+          disabled={showReturnButton}
         >
           Confirmar Alquiler
         </button>
 
-        {/* Botón para devolver la bicicleta dentro del contenedor */}
         {showReturnButton && (
           <div className="text-center mt-4">
             <button className="btn btn-warning" onClick={handleReturnBike}>Bicicleta entregada</button>
           </div>
         )}
 
-        {/* Botón para volver al mapa */}
         <div className="text-center mt-4">
           <button className="btn btn-primary" onClick={() => navigate('/map')}>
             Volver al Mapa
